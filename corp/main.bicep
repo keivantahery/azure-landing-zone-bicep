@@ -1,15 +1,38 @@
 
 targetScope = 'resourceGroup'
 
+@description('')
 param location string
+
+@description('')
 param environment string
+
+@description('')
 param corpSpokeAddressPrefixes array
+
+@description('')
 param corpSpokeSubnetAddressPrefixes array
+
+@description('')
 param tenantId string
+
+@description('')
 param deployKeyVault bool
-param keyVaultName string
+
+@description('')
 param principalType string
 
+@description('')
+param deploystorgeAccount bool
+
+@description('')
+param deploylogAnalyticsWorkspace bool
+
+@description('')
+param deployActionGroup bool
+
+@description('')
+param deployServiceVault bool
 
 // Corp VNet
 module corpSpokeVnet '../modules/vnet.bicep' = {
@@ -25,6 +48,7 @@ module corpSpokeVnet '../modules/vnet.bicep' = {
   }
 }
 
+
 // Corp Network Security Group
 module corpSpokeNsg '../modules/nsg.bicep' = {
   name: 'deploy-corp-spoke-nsg'
@@ -33,6 +57,7 @@ module corpSpokeNsg '../modules/nsg.bicep' = {
     location: location
   }
 }
+
 
 // Corp Subnet with NSG association
 module corpSpokeSubnet '../modules/subnet.bicep' = {
@@ -46,6 +71,7 @@ module corpSpokeSubnet '../modules/subnet.bicep' = {
   }
 }
 
+
 // Empty Corp Route Table
 module corpSpokeRouteTable '../modules/rt.bicep' = {
   name: 'deploy-corp-spoke-route-table'
@@ -56,6 +82,7 @@ module corpSpokeRouteTable '../modules/rt.bicep' = {
 
   }
 }
+
 
 // Corp Private DNS Zone
 module corpSpokePrivateDnsZone '../modules/privateDNSZone.bicep' = {
@@ -99,10 +126,12 @@ module managedIdentity '../modules/managedIdentity.bicep' = {
   }
 }
 
+
+//Key vault
 module keyVault '../modules/keyvault.bicep' = if (deployKeyVault){
   name: 'deploy-key-vault'
   params: {
-    keyVaultName: keyVaultName
+    keyVaultName: 'kv-corp-${environment}-5108'
     location: location
     enabledForDeployment: true
     enabledForDiskEncryption: true
@@ -118,6 +147,7 @@ module keyVault '../modules/keyvault.bicep' = if (deployKeyVault){
   }
 }
 
+
 // Role Assignment for Managed Identity to Key Vault
 module roleAssignment '../modules/roleAssignment.bicep' = if (deployKeyVault){
   name: 'assign-role-to-key-vault'
@@ -128,6 +158,104 @@ module roleAssignment '../modules/roleAssignment.bicep' = if (deployKeyVault){
   }
 }
 
+
+// storageAccount 
+module storageAccount '../modules/storageAccount.bicep' = if (deploystorgeAccount){
+name : 'deploy-storge-account'
+params :{
+  resourceName : 'sa-corp-${environment}'
+  location : location
+  skuName : 'Standard_LRS'
+  skuKind : 'StorageV2'
+  accessTier : 'Hot'
+  allowBlobPublicAccess : false
+  allowCrossTenantReplication : false
+  allowSharedKeyAccess : false
+  defaultToAuthentication : true
+  isHnsEnabld :false
+  isNfsV3Enabled :false
+  isSftpEnabled : false
+  publicNetworkAccess : 'enabled'
+  supportsHttpsTrafficOnly :true
+  }
+
+}
+
+
+//storage container
+module storageContainer '../modules/storageContainer.bicep' = if (deploystorgeAccount){
+  name : 'deploy-storage-container'
+  
+  params:{
+    location:location
+    resourceName: 'sc-corp-${environment}'
+    storageAccountName: storageAccount.outputs.storageAccountName
+
+  }
+}
+
+
+//logAnalyticsWorkspace
+module logAnalyticsWorkspace '../modules/logAnalyticsWorkspace.bicep' = if (deploylogAnalyticsWorkspace){
+  name : 'deploy-workspace'
+
+  params:{
+    
+    resourceName:'la-corp-${environment}'
+    location:location
+    disableLocalAuth: true
+    enableLogAccessUsingOnlyResourcePermissions: true
+    publicNetworkAccessForIngestion:'enabled'
+    publicNetworkAccessForQuery:'enabled'
+    retentionDays:30
+    skuName:'PerGB2018'
+  
+  }
+}
+
+
+//actionGroup
+module actionGroup '../modules/actionGroup.bicep' = if (deployActionGroup){
+  name : 'deploy-action-group'
+
+  params:{
+    location : location
+    resourceName :'ag-corp-${environment}'
+    armRoleReceivers : []
+    automationRunbookReceivers : []
+    azureAppPushReceivers : []
+    azureFunctionReceivers : []
+    emailReceivers :[
+      {
+         emailAddress: 'keivan.tahery@gmail.com'
+         name: 'test'
+
+      }
+    ]
+    isActionGroupEnabled : true
+    eventHubReceivers : []
+    actionGroupShortName  : 'ag-corp'
+    itsmReceivers :[]
+    logicAppReceivers :[]
+    smsReceivers :[]
+    voiceReceivers :[]
+    webhookReceivers :[]
+      
+  }
+}
+
+
+//recoveryServiceVault
+module serviceVault '../modules/recoveryServiceVault.bicep' = if (deployServiceVault){
+  name : 'deploy-serviceVault-name'
+  params:{
+    location: location
+    resourceName: 'rsv-corp-${environment}'
+    publicNetworkAccess: 'enabled'
+    skuName: 'Standard'
+  }
+}
+
 // Outputs
 output corpSpokeVnetId string = corpSpokeVnet.outputs.vnetId
 output corpSpokeSubnetId string = corpSpokeSubnet.outputs.subnetId
@@ -135,3 +263,7 @@ output corpSpokeNsgId string = corpSpokeNsg.outputs.nsgId
 output keyVaultId string = keyVault.outputs.keyVaultId
 output managedIdentityId string = managedIdentity.outputs.identityId
 output corpSpokePrivateDnsZoneId string = corpSpokePrivateDnsZone.outputs.privateDnsZoneId
+output storageAccountId string  = storageAccount.outputs.storageAccountId
+output storageAccountName string  = storageAccount.outputs.storageAccountName
+output logAnalyticsWorkspaceName string = logAnalyticsWorkspace.outputs.workspaceName
+output logAnalyticsWorkspaceId string = logAnalyticsWorkspace.outputs.workspaceId
