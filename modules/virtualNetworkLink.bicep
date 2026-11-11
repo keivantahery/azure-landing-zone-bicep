@@ -1,6 +1,14 @@
+
+@description('Specifies the name of the virtual network link.')
 param resourceName string
+
+@description('Specifies the name of the private DNS zone.')
 param privateDnsZoneName string
+
+@description('Specifies whether registration is disabled.')
 param disableRegistration bool = false
+
+@description('Specifies the name of the virtual network.')
 param virtualNetworkName string
 
 

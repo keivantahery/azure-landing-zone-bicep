@@ -3,6 +3,8 @@ param zoneName string
 
 @description('The name of the DNS record to be created.  The name is relative to the zone, not the FQDN.')
 param recordName string 
+
+@description('The IPv4 address to be associated with the DNS record.')
 param ipv4Address string
 
 

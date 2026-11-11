@@ -1,13 +1,13 @@
-@description('')
+@description('The name of the Recovery Services vault to be created.')
 param resourceName string
 
-@description('')
+@description('The location of the Recovery Services vault.')
 param location string
 
-@description('')
+@description('Specifies whether public network access is enabled for the Recovery Services vault.')
 param publicNetworkAccess string
 
-@description('')
+@description('The name of the SKU for the Recovery Services vault.')
 param skuName string
 
 

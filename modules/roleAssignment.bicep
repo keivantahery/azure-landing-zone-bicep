@@ -1,8 +1,13 @@
 
 targetScope = 'resourceGroup'
 
+@description('The principal ID of the user, group, or service principal to assign the role to.')
 param principalId string
-param principalType string 
+
+@description('The type of the principal.')
+param principalType string
+
+@description('The ID of the role definition to assign.')
 param roleDefinitionId string
 
 resource roleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {

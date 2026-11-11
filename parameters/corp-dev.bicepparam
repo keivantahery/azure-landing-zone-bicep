@@ -33,3 +33,6 @@ param deployActionGroup = true
 
 //values for recoveryServiceVault
 param deployServiceVault = true
+
+//values for route table
+param deployRouteTable = true

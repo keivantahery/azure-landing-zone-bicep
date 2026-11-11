@@ -1,38 +1,44 @@
 
 targetScope = 'resourceGroup'
 
-@description('')
+@description('The location of the resource.')
 param location string
 
-@description('')
+@description('The environment for the deployment.')
 param environment string
 
-@description('')
+@description('The address prefixes for the Corp Spoke VNet.')
 param corpSpokeAddressPrefixes array
 
-@description('')
+@description('The address prefixes for the Corp Spoke Subnets.')
 param corpSpokeSubnetAddressPrefixes array
 
-@description('')
+@description('The tenant ID for the deployment.')
 param tenantId string
 
-@description('')
+@description('Specifies whether to deploy the Key Vault. If true, the Key Vault will be deployed. If false, the Key Vault will not be deployed.')
 param deployKeyVault bool
 
-@description('')
+@description('Specifies whether to deploy the Route Table. If true, the Route Table will be deployed. If false, the Route Table will not be deployed.')
+param deployRouteTable bool
+
+@description('The type of the principal for role assignment.')
 param principalType string
 
-@description('')
+@description('Specifies whether to deploy the Storage Account. If true, the Storage Account will be deployed. If false, the Storage Account will not be deployed.')
 param deploystorgeAccount bool
 
-@description('')
+@description('Specifies whether to deploy the Log Analytics Workspace. If true, the Log Analytics Workspace will be deployed. If false, the Log Analytics Workspace will not be deployed.')
 param deploylogAnalyticsWorkspace bool
 
-@description('')
+@description('Specifies whether to deploy the Action Group. If true, the Action Group will be deployed. If false, the Action Group will not be deployed.')
 param deployActionGroup bool
 
-@description('')
+@description('Specifies whether to deploy the Service Vault. If true, the Service Vault will be deployed. If false, the Service Vault will not be deployed.')
 param deployServiceVault bool
+
+@description('The location for global resources such as Private DNS Zones and Action Groups. This is typically set to "global" for these resources.')
+param globalLocation string = 'global'
 
 // Corp VNet
 module corpSpokeVnet '../modules/vnet.bicep' = {
@@ -67,13 +73,13 @@ module corpSpokeSubnet '../modules/subnet.bicep' = {
     subnetName: 'snet-corp-${environment}'
     addressPrefix: corpSpokeSubnetAddressPrefixes[0]
     networkSecurityGroupId: corpSpokeNsg.outputs.nsgId
-    routeTableId: corpSpokeRouteTable.outputs.routeTableId
+    routeTableId: deployRouteTable ? corpSpokeRouteTable!.outputs.routeTableId : ''
   }
 }
 
 
 // Empty Corp Route Table
-module corpSpokeRouteTable '../modules/rt.bicep' = {
+module corpSpokeRouteTable '../modules/rt.bicep' = if (deployRouteTable){
   name: 'deploy-corp-spoke-route-table'
   params: {
     resourceName: 'rt-corp-${environment}'
@@ -163,7 +169,7 @@ module roleAssignment '../modules/roleAssignment.bicep' = if (deployKeyVault){
 module storageAccount '../modules/storageAccount.bicep' = if (deploystorgeAccount){
 name : 'deploy-storge-account'
 params :{
-  resourceName : 'sa-corp-${environment}'
+  resourceName : 'sacorp${environment}'
   location : location
   skuName : 'Standard_LRS'
   skuKind : 'StorageV2'
@@ -187,9 +193,9 @@ module storageContainer '../modules/storageContainer.bicep' = if (deploystorgeAc
   name : 'deploy-storage-container'
   
   params:{
-    location:location
+    publicAccess : 'None'
     resourceName: 'sc-corp-${environment}'
-    storageAccountName: storageAccount.outputs.storageAccountName
+    storageAccountName: storageAccount!.outputs.storageAccountName
 
   }
 }
@@ -219,7 +225,7 @@ module actionGroup '../modules/actionGroup.bicep' = if (deployActionGroup){
   name : 'deploy-action-group'
 
   params:{
-    location : location
+    globalLocation : globalLocation
     resourceName :'ag-corp-${environment}'
     armRoleReceivers : []
     automationRunbookReceivers : []
@@ -256,14 +262,45 @@ module serviceVault '../modules/recoveryServiceVault.bicep' = if (deployServiceV
   }
 }
 
+//diagnosticSettings for keyVault
+module diagnosticSettings '../modules/diagnosticSettings.bicep' = if (deployKeyVault && deploylogAnalyticsWorkspace){
+  name: 'deploy-diagnostic-settings'
+  params: {
+    resourceName: 'ds-corp-${environment}'
+    keyVaultName: keyVault!.outputs.keyVaultName
+    workspaceId: logAnalyticsWorkspace!.outputs.workspaceId
+  }
+}
+
+
+//scheduledQueryRule
+module scheduledQueryRule '../modules/scheduledQueryRule.bicep' = if (deploylogAnalyticsWorkspace && deployActionGroup){
+  name: 'deploy-scheduled-query-rule'
+  params: {
+    resourceName: 'sqr-corp-${environment}'
+    location: location
+    scopes: [logAnalyticsWorkspace!.outputs.workspaceId]
+    query: 'AzureDiagnostics | where ResourceProvider == "MICROSOFT.KEYVAULT" | where httpStatusCode_d in (401, 403)'
+    actionGroupIds: [actionGroup!.outputs.actionGroupId] 
+    severity: 3
+    threshold: 0
+    alertOperator: 'GreaterThan'
+    timeAggregation: 'Count'
+    evaluationFrequency: 'PT5M'
+    windowSize: 'PT5M'
+    enabled: true
+    autoMitigate: true
+  }
+}
+
 // Outputs
 output corpSpokeVnetId string = corpSpokeVnet.outputs.vnetId
 output corpSpokeSubnetId string = corpSpokeSubnet.outputs.subnetId
 output corpSpokeNsgId string = corpSpokeNsg.outputs.nsgId
-output keyVaultId string = keyVault.outputs.keyVaultId
-output managedIdentityId string = managedIdentity.outputs.identityId
-output corpSpokePrivateDnsZoneId string = corpSpokePrivateDnsZone.outputs.privateDnsZoneId
-output storageAccountId string  = storageAccount.outputs.storageAccountId
-output storageAccountName string  = storageAccount.outputs.storageAccountName
-output logAnalyticsWorkspaceName string = logAnalyticsWorkspace.outputs.workspaceName
-output logAnalyticsWorkspaceId string = logAnalyticsWorkspace.outputs.workspaceId
+output keyVaultId string = keyVault!.outputs.keyVaultId
+output managedIdentityId string = managedIdentity!.outputs.identityId
+output corpSpokePrivateDnsZoneId string = corpSpokePrivateDnsZone!.outputs.privateDnsZoneId
+output storageAccountId string  = storageAccount!.outputs.storageAccountId
+output storageAccountName string  = storageAccount!.outputs.storageAccountName
+output logAnalyticsWorkspaceName string = logAnalyticsWorkspace!.outputs.workspaceName
+output logAnalyticsWorkspaceId string = logAnalyticsWorkspace!.outputs.workspaceId

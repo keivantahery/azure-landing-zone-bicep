@@ -1,43 +1,43 @@
-@description('')
+@description('  The name of the storage account to be created.')
 param resourceName string
 
-@description('')
+@description('The location of the storage account.')
 param location string
 
-@description('')
+@description('The name of the SKU for the storage account.')
 param skuName string
 
-@description('')
+@description('The kind of the SKU for the storage account.')
 param skuKind string
 
-@description('')
+@description('The access tier for the storage account.')
 param accessTier string
 
-@description('')
+@description('Specifies whether blob public access is allowed.')
 param allowBlobPublicAccess bool
 
-@description('')
+@description('Specifies whether cross-tenant replication is allowed.')
 param allowCrossTenantReplication bool
 
-@description('')
+@description('Specifies whether shared key access is allowed. If false, only Azure Active Directory authentication is allowed.')
 param allowSharedKeyAccess bool
 
-@description('')
+@description('Specifies whether to default to OAuth authentication. If true, the storage account will default to OAuth authentication for all requests. If false, the storage account will default to shared key authentication for all requests.')
 param defaultToAuthentication bool
 
-@description('')
+@description('Specifies whether Hierarchical Namespaces is enabled. If true, the storage account will have a hierarchical namespace and support for Azure Data Lake Storage Gen2 features. If false, the storage account will not have a hierarchical namespace and will not support Azure Data Lake Storage Gen2 features.')
 param isHnsEnabld bool
 
-@description('')
+@description('Specifies whether NFS v3 is enabled. If true, the storage account will support NFS v3 protocol for file shares. If false, the storage account will not support NFS v3 protocol for file shares.')
 param isNfsV3Enabled bool
 
-@description('')
+@description('Specifies whether SFTP is enabled. If true, the storage account will support SFTP protocol for file shares. If false, the storage account will not support SFTP protocol for file shares.')
 param isSftpEnabled bool
 
-@description('')
+@description('Specifies whether public network access is enabled. If true, the storage account will allow access from public networks. If false, the storage account will only allow access from private networks.')
 param publicNetworkAccess string
 
-@description('')
+@description('Specifies whether the storage account supports HTTPS traffic only. If true, the storage account will only allow HTTPS traffic. If false, the storage account will allow both HTTP and HTTPS traffic.')
 param supportsHttpsTrafficOnly bool
 
 

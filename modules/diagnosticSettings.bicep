@@ -1,69 +1,32 @@
 
-@description('')
+@description('Name of the diagnostic setting.')
 param resourceName string
 
-@description('')
-param resourceScope string
+@description('Name of the existing Key Vault.')
+param keyVaultName string
 
-@description('')
-param logsCategoryGroup string
+@description('Resource ID of the Log Analytics Workspace.')
+param workspaceId string
 
-@description('')
-param enableLogDiagnosticSettings bool
-
-@description('')
-param logRetention int
-
-@description('')
-param enableLogRentention bool
-
-@description('')
-param metricCategory string
-
-@description('')
-param enableMetrics bool
-
-@description('')
-param metricRetention int
-
-
-resource authorizationRule 'Microsoft.EventHub/namespaces/authorizationRules@2021-11-01' = {
-  name: 'example'
-  parent: namespace
-  properties: {
-    rights: [
-      'Listen'
-      'Send'
-      'Manage'
-    ]
-  }
+resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
+  name: keyVaultName
 }
-
 
 resource diagnosticSetting 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
   name: resourceName
-  scope: resourceScope
+  scope: keyVault
   properties: {
-    eventHubAuthorizationRuleId: authorizationRule.id
-    eventHubName: namespace.name
+    workspaceId: workspaceId
     logs: [
       {
-        categoryGroup: logsCategoryGroup
-        enabled: enableLogDiagnosticSettings
-        retentionPolicy: {
-          days: logRetention
-          enabled: enableLogRentention
-        }
+        category: 'AuditEvent'
+        enabled: true
       }
     ]
     metrics: [
       {
-        category: metricCategory
-        enabled: enableMetrics
-        retentionPolicy: {
-          days: metricRetention
-          enabled: false
-        }
+        category: 'AllMetrics'
+        enabled: true
       }
     ]
   }

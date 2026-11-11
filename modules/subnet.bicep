@@ -8,9 +8,11 @@ param subnetName string
 @description('Subnet address prefix')
 param addressPrefix string
 
+@description('Network Security Group ID to associate with the subnet. Leave empty if not needed.')
 param networkSecurityGroupId string
-param routeTableId string 
 
+@description('Route Table ID to associate with the subnet. Leave empty if not needed.')
+param routeTableId string
 
 resource vnet 'Microsoft.Network/virtualNetworks@2024-05-01' existing = {
   name: vnetName

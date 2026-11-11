@@ -1,52 +1,52 @@
 @description('specifiesd the location of the actongroup')
-param location string
+param globalLocation string
 
 @description('specifie the name of the actiongroup')
 param resourceName string
 
-@description('allows you to send alert notifications to all members of a specific Azure Resource Manager')
+@description('Notifies users assigned to specified Azure RBAC roles at the subscription scope.')
 param armRoleReceivers array
 
-@description('allows you to send alert notifications to all members of a specific automation runbook')
+@description('Triggers Azure Automation runbooks when alerts fire')
 param automationRunbookReceivers array
 
-@description('')
+@description('Sends push notifications to registered Azure mobile app users')
 param azureAppPushReceivers array
 
-@description('')
+@description('Invokes Azure Functions to execute custom alert-handling logic')
 param azureFunctionReceivers array
 
-@description('')
+@description('Sends email notifications to specified email addresses')
 param emailReceivers array
 
-@description('')
+@description('Determines whether the action group is enabled')
 param isActionGroupEnabled bool
 
-@description('')
+@description(' Sends alert notifications to an Azure Event Hub')
 param eventHubReceivers array
 
-@description('')
+@description('A short name for the action group')
 param actionGroupShortName string
 
-@description('')
+@description('Integrates with IT Service Management (ITSM) tools to create incidents or tickets when alerts fire')
 param itsmReceivers array
 
-@description('')
+@description('Invokes Logic Apps to execute custom alert-handling logic')
 param logicAppReceivers array
 
-@description('')
+@description(' Sends SMS notifications to specified phone numbers')
 param smsReceivers array
 
-@description('')
+@description('Sends voice notifications to specified phone numbers')
 param voiceReceivers array
 
-@description('')
+@description('Sends webhook notifications to specified endpoints')
 param webhookReceivers array
 
 
 resource actionGroup 'Microsoft.Insights/actionGroups@2023-01-01' = {
   name: resourceName
-  location: location
+  location: globalLocation
   properties: {
     armRoleReceivers: armRoleReceivers
     automationRunbookReceivers: automationRunbookReceivers
@@ -64,5 +64,5 @@ resource actionGroup 'Microsoft.Insights/actionGroups@2023-01-01' = {
   }
 }
 
-output actiogGroupName string = actionGroup.name
-output actiogGroupId string = actionGroup.id
+output actionGroupName string = actionGroup.name
+output actionGroupId string = actionGroup.id
