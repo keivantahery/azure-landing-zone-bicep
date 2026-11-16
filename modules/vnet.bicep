@@ -25,7 +25,5 @@ resource vnet 'Microsoft.Network/virtualNetworks@2024-05-01' = {
 
 
 
-
-
 output vnetId string = vnet.id
 output vnetName string = vnet.name

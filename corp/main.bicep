@@ -40,6 +40,14 @@ param deployServiceVault bool
 @description('The location for global resources such as Private DNS Zones and Action Groups. This is typically set to "global" for these resources.')
 param globalLocation string = 'global'
 
+
+@description('Specifies whether to deploy the Private Endpoint. If true, the Private Endpoint will be deployed. If false, the Private Endpoint will not be deployed.')
+param deployPrivateEndpoint bool
+
+
+@description('The group IDs for the Private Link Service connection.')
+param groupIds array
+
 // Corp VNet
 module corpSpokeVnet '../modules/vnet.bicep' = {
   name: 'deploy-corp-spoke-vnet'
@@ -290,6 +298,22 @@ module scheduledQueryRule '../modules/scheduledQueryRule.bicep' = if (deploylogA
     windowSize: 'PT5M'
     enabled: true
     autoMitigate: true
+  }
+}
+
+//privateEndpoint
+module privateEndpoint '../modules/pe.bicep' = if (deployPrivateEndpoint){
+  name: 'deploy-private-endpoint'
+  params: {
+    resourceName: 'pe-corp-${environment}'
+    location: location
+    privateLinkServiceId: keyVault!.outputs.keyVaultId
+    groupIds: [
+      groupIds[0]
+    ]
+    subnet: {
+      id: corpSpokeSubnet.outputs.subnetId
+    }
   }
 }
 

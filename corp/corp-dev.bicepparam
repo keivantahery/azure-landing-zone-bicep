@@ -36,3 +36,9 @@ param deployServiceVault = true
 
 //values for route table
 param deployRouteTable = true
+
+//values for private endpoint
+param deployPrivateEndpoint = true
+param groupIds = [
+  'vault'
+]
