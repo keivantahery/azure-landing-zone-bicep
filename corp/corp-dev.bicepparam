@@ -23,22 +23,28 @@ param deployKeyVault = true
 param principalType = 'ServicePrincipal' // or 'User'
 
 //values for storage account
-param deploystorgeAccount = true
+param deploystorgeAccount = false
 
 //values for log Analytics workspace
-param deploylogAnalyticsWorkspace = true
+param deploylogAnalyticsWorkspace = false
 
 //values for actiongroup
-param deployActionGroup = true
+param deployActionGroup = false
 
 //values for recoveryServiceVault
-param deployServiceVault = true
+param deployServiceVault = false
 
 //values for route table
-param deployRouteTable = true
+param deployRouteTable = false
 
 //values for private endpoint
 param deployPrivateEndpoint = true
 param groupIds = [
   'vault'
 ]
+
+//values for private DNS zone keyvault
+param deployPrivateDnsZone = false
+
+//values for private DNS zone keyvault
+param deployPrivateDnsZoneKeyvault = true

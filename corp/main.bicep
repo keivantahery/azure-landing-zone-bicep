@@ -48,6 +48,12 @@ param deployPrivateEndpoint bool
 @description('The group IDs for the Private Link Service connection.')
 param groupIds array
 
+@description('Specifies whether to deploy the Private DNS Zone. If true, the Private DNS Zone will be deployed. If false, the Private DNS Zone will not be deployed.')
+param deployPrivateDnsZone bool
+
+@description('Specifies whether to deploy the Private DNS Zone for the Key Vault. If true, the Private DNS Zone will be deployed. If false, it will not be deployed.')
+param deployPrivateDnsZoneKeyvault bool
+
 // Corp VNet
 module corpSpokeVnet '../modules/vnet.bicep' = {
   name: 'deploy-corp-spoke-vnet'
@@ -99,7 +105,7 @@ module corpSpokeRouteTable '../modules/rt.bicep' = if (deployRouteTable){
 
 
 // Corp Private DNS Zone
-module corpSpokePrivateDnsZone '../modules/privateDNSZone.bicep' = {
+module corpSpokePrivateDnsZone '../modules/privateDNSZone.bicep' = if (deployPrivateDnsZone) {
   name: 'deploy-corp-spoke-private-dns-zone'
   params: {
     resourceName: 'privatedns-corp-${environment}'
@@ -109,10 +115,10 @@ module corpSpokePrivateDnsZone '../modules/privateDNSZone.bicep' = {
 
 
 // Corp Private DNS Zone Virtual Network Link
-module dnsRecord '../modules/dnsRecord.bicep' = {
+module dnsRecord '../modules/dnsRecord.bicep' = if (deployPrivateDnsZone) {
   name: 'deploy-dns-record'
   params: {
-    zoneName: corpSpokePrivateDnsZone.outputs.privateDnsZoneName
+    zoneName: corpSpokePrivateDnsZone!.outputs.privateDnsZoneName
     recordName: 'app1'
     ipv4Address: '203.0.113.1'
   }
@@ -120,11 +126,11 @@ module dnsRecord '../modules/dnsRecord.bicep' = {
 
 
 // Corp Private DNS Zone Virtual Network Link
-module privatenetworkLink '../modules/virtualNetworkLink.bicep' = {
+module privatenetworkLink '../modules/virtualNetworkLink.bicep' = if (deployPrivateDnsZone) {
   name: 'deploy-private-network-link'
   params: {
     resourceName: 'vnetlink-corp-${environment}'
-    privateDnsZoneName: corpSpokePrivateDnsZone.outputs.privateDnsZoneName
+    privateDnsZoneName: corpSpokePrivateDnsZone!.outputs.privateDnsZoneName
     disableRegistration: false
     virtualNetworkName: corpSpokeVnet.outputs.vnetId
   }
@@ -317,6 +323,27 @@ module privateEndpoint '../modules/pe.bicep' = if (deployPrivateEndpoint){
   }
 }
 
+//privateDnsZone_keyVault
+module privateDnsZoneKeyVault '../modules/privateDNSZone.bicep' = if (deployPrivateDnsZoneKeyvault){
+  name: 'deploy-private-dns-zone-group-keyvault'
+  params: {
+    resourceName: 'privatelink.vaultcore.azure.net'
+    dnsLocation: 'global'
+  }
+}
+
+//virtualNetworkLink for private DNS zone
+module virtualNetworkLinkkeyvault '../modules/virtualNetworkLink.bicep' = if (deployPrivateDnsZoneKeyvault){
+  name: 'deploy-virtual-network-link-keyvault'
+  params: {
+    resourceName: 'vnl-corp-${environment}'
+    privateDnsZoneName: 'privatelink.vaultcore.azure.net'
+    disableRegistration: false
+    virtualNetworkName: corpSpokeVnet.outputs.vnetId
+  }
+}
+
+
 // Outputs
 output corpSpokeVnetId string = corpSpokeVnet.outputs.vnetId
 output corpSpokeSubnetId string = corpSpokeSubnet.outputs.subnetId
@@ -328,3 +355,4 @@ output storageAccountId string  = storageAccount!.outputs.storageAccountId
 output storageAccountName string  = storageAccount!.outputs.storageAccountName
 output logAnalyticsWorkspaceName string = logAnalyticsWorkspace!.outputs.workspaceName
 output logAnalyticsWorkspaceId string = logAnalyticsWorkspace!.outputs.workspaceId
+output privateDnsZoneGroupId string = privateDnsZoneKeyVault!.outputs.privateDnsZoneId

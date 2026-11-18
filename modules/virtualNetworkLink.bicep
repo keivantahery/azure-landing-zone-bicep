@@ -6,7 +6,7 @@ param resourceName string
 param privateDnsZoneName string
 
 @description('Specifies whether registration is disabled.')
-param disableRegistration bool = false
+param disableRegistration bool
 
 @description('Specifies the name of the virtual network.')
 param virtualNetworkName string
